@@ -1,0 +1,25 @@
+{
+  "name": "gimkit-creative-sdk",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Program Gimkit Creative maps with high-level commands (place, property, button, trigger, blocks) instead of scripting individual clicks.",
+  "main": "src/index.mjs",
+  "exports": {
+    ".": "./src/index.mjs"
+  },
+  "bin": {
+    "gkc": "./src/cli.mjs"
+  },
+  "scripts": {
+    "test": "node test/run-tests.mjs",
+    "plan:xor": "node src/cli.mjs plan examples/xor-nn.gkc",
+    "run:xor": "node src/cli.mjs run examples/xor-nn.gkc --auto",
+    "plan:hello": "node src/cli.mjs plan examples/hello.gkc",
+    "repl": "node src/cli.mjs repl",
+    "repl:dry": "node src/cli.mjs repl --dry-run"
+  },
+  "dependencies": {
+    "playwright": "^1.52.0"
+  }
+}

@@ -1,0 +1,102 @@
+# XOR neural network (2-2-1, ReLU hidden) — fully inside one Gimkit Creative map.
+# Same network as gimkit-creative-nn-builder, expressed in the SDK command language.
+# Weights are stored ×100 because Gimkit properties only hold integers.
+#
+#   gkc plan examples/xor-nn.gkc        # print the click plan (offline)
+#   gkc run  examples/xor-nn.gkc --auto # build it live
+
+layout origin 72,72 gap 95,68
+
+# ---- place everything first (Devices panel stays open between placements)
+place text "=== XOR NN 2-2-1 ===" at r0c0
+place property input1     at r1c0
+place property input2     at r1c1
+place property weight1-1  at r2c0
+place property weight1-2  at r2c1
+place property weight2-1  at r2c2
+place property weight2-2  at r3c0
+place property weight3-1  at r3c1
+place property weight3-2  at r3c2
+place property bias1      at r4c0
+place property bias2      at r4c1
+place property bias3      at r4c2
+place property output1    at r5c0
+place property output2    at r5c1
+place property net_output at r5c2
+place trigger "Forward Pass" at r6c0
+place trigger "Set input1=1" at r6c1
+place trigger "Set input1=0" at r6c2
+place trigger "Set input2=1" at r7c0
+place trigger "Set input2=0" at r7c1
+place button  "Run NN"  at r7c2
+place button  "In1 ON"  at r8c0
+place button  "In1 OFF" at r8c1
+place button  "In2 ON"  at r8c2
+place button  "In2 OFF" at r9c0
+place text "net_output is x100: ~100 = true, ~0 = false" at r9c1
+place text "XOR = ?" at r9c2
+
+# ---- text devices (content = name; positions resolved from the place lines)
+text "=== XOR NN 2-2-1 ==="
+text "net_output is x100: ~100 = true, ~0 = false"
+text "XOR = ?"
+
+# ---- properties (positions resolved by name from the place lines above)
+property input1     = 0
+property input2     = 0
+property weight1-1  = -80
+property weight1-2  = -80
+property weight2-1  = 82
+property weight2-2  = 82
+property weight3-1  = -129
+property weight3-2  = -123
+property bias1      = 80
+property bias2      = -79
+property bias3      = 103
+property output1    = 0
+property output2    = 0
+property net_output = 0
+
+# ---- channels
+button "Run NN"  transmits nn-forward
+button "In1 ON"  transmits input-1-on
+button "In1 OFF" transmits input-1-off
+button "In2 ON"  transmits input-2-on
+button "In2 OFF" transmits input-2-off
+trigger "Forward Pass" receives nn-forward
+trigger "Set input1=1" receives input-1-on
+trigger "Set input1=0" receives input-1-off
+trigger "Set input2=1" receives input-2-on
+trigger "Set input2=0" receives input-2-off
+
+# ---- block code
+blocks "Set input1=1": property input1 = 1
+blocks "Set input1=0": property input1 = 0
+blocks "Set input2=1": property input2 = 1
+blocks "Set input2=0": property input2 = 0
+
+blocks "Forward Pass" {
+  set A = {input1}
+  set B = {input2}
+  set Z1 = {bias1} + A * {weight1-1} + B * {weight1-2}
+  set Z2 = {bias2} + A * {weight2-1} + B * {weight2-2}
+  set H1 = Z1
+  relu H1
+  set H2 = Z2
+  relu H2
+  property output1 = H1
+  property output2 = H2
+  property net_output = round({bias3} + (H1 * {weight3-1} + H2 * {weight3-2}) / 100)
+  broadcast "nn-done"
+}
+
+# ---- closed loop: the Text device redraws itself when the network finishes
+blocks "XOR = ?" on nn-done {
+  if {net_output} > 50 {
+    text = "XOR(" + {input1} + "," + {input2} + ") = 1   [net " + {net_output} + "]"
+  } else {
+    text = "XOR(" + {input1} + "," + {input2} + ") = 0   [net " + {net_output} + "]"
+  }
+}
+
+screenshot xor-built

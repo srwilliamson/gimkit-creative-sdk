@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+
+# Build artifacts, run reports, probe dumps
+build-output/
+*.log
+
+# Chrome profile holding the Gimkit login session (GKC_PROFILE_DIR default)
+browser-profile/
+
+# Local environment / credentials (GKC_EMAIL, GKC_PASSWORD, GKC_HOST_URL)
+.env
+.env.*
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

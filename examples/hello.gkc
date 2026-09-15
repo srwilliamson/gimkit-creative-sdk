@@ -1,0 +1,11 @@
+# Smallest useful map: a button that increments a counter property.
+layout origin 120,120 gap 110,80
+
+place property clicks at r0c0
+place button "Click Me" at r0c1
+place trigger "Count" at r0c2
+
+property clicks = 0
+button "Click Me" transmits clicked
+trigger "Count" receives clicked
+blocks "Count": property clicks = {clicks} + 1

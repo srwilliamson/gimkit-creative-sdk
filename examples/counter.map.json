@@ -1,0 +1,11 @@
+{
+  "name": "Counter demo (JSON spec)",
+  "layout": { "origin": [120, 120], "gap": [110, 80] },
+  "devices": [
+    { "type": "property", "name": "clicks", "at": "r0c0", "value": 0 },
+    { "type": "button", "name": "Click Me", "at": "r0c1", "transmits": "clicked" },
+    { "type": "trigger", "name": "Count", "at": "r0c2", "receives": "clicked",
+      "blocks": "property clicks = {clicks} + 1" },
+    { "type": "text", "text": "Press the button!", "grid": [1, 0] }
+  ]
+}
