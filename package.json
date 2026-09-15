@@ -4,6 +4,11 @@
   "private": true,
   "type": "module",
   "description": "Program Gimkit Creative maps with high-level commands (place, property, button, trigger, blocks) instead of scripting individual clicks.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/srwilliamson/gimkit-creative-sdk.git"
+  },
   "main": "src/index.mjs",
   "exports": {
     ".": "./src/index.mjs"

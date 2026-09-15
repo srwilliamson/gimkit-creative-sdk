@@ -38,7 +38,9 @@ gkc probe → build-output/probe.json  (real block/panel names, feeds the vocabu
 ## Quick start
 
 ```powershell
-cd c:\Users\Silas\gimkit-creative-sdk
+git clone https://github.com/srwilliamson/gimkit-creative-sdk.git
+cd gimkit-creative-sdk
+npm install                                # Playwright (drives your installed Google Chrome; no browser download)
 npm test                                   # offline: parser, lints, simulator, mock-Blockly builder
 node src/cli.mjs check examples/xor-nn.gkc # static check: 0 errors, 0 warnings
 node src/cli.mjs simulate examples/xor-nn.gkc --set input1=1 --set input2=0 --fire nn-forward
@@ -362,3 +364,9 @@ non-integer defaults, shared positions, duplicate names, malformed
 4. `src/simulate.mjs`: evaluate it.
 5. `test/run-tests.mjs`: add it to `STD_DEFS` in the mock-Blockly harness and
    assert the built block type / fields.
+
+## License
+
+[MIT](LICENSE) — free to use, modify, and redistribute. Not affiliated with
+Gimkit; it drives the regular Creative editor UI through your own logged-in
+browser, so Gimkit's terms of service apply to whatever you build with it.
