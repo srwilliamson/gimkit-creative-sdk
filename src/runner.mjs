@@ -321,17 +321,20 @@ export class GkcRunner {
     }
 
     const attempts = RETRIED.includes(a.kind) ? 1 + this.retries : a.kind === "place" ? 2 : 1;
+    const t0 = Date.now();
     let last = null;
+    let used = 0;
     for (let i = 1; i <= attempts; i += 1) {
+      used = i;
       if (this.verbose) log(`${i > 1 ? `(retry ${i - 1}) ` : ""}${labelAction(a)}`);
       last = await executeAction(this.page, a);
       if (last.ok) break;
       if (this.verbose) log(`  ✗ ${last.detail || "failed"}`);
       if (i < attempts) await this.page.waitForTimeout(600);
     }
-    const r = { ok: !!last?.ok, action: a, ...last };
+    const r = { ok: !!last?.ok, action: a, ...last, ms: Date.now() - t0, attempts: used };
     this.results.push(r);
-    if (r.ok && this.verbose) log(`  ✓ ${a.kind} ok${r.detail ? ` (${r.detail})` : ""}`);
+    if (r.ok && this.verbose) log(`  ✓ ${a.kind} ok${r.detail ? ` (${r.detail})` : ""} [${(r.ms / 1000).toFixed(1)}s${used > 1 ? `, ${used} attempts` : ""}]`);
     if (r.ok && a.kind === "place" && !this.anchor) this.anchor = { x: a.x, y: a.y, name: a.name || a.deviceType };
     if (!r.ok) {
       if (a.kind === "place") this.failedPositions.add(this.posKey(a));
@@ -383,6 +386,15 @@ export class GkcRunner {
     const okCount = this.results.filter((r) => r.ok).length;
     const failed = this.results.filter((r) => !r.ok && !r.skipped);
     const skipped = this.results.filter((r) => r.skipped);
+    const timed = this.results.filter((r) => Number.isFinite(r.ms));
+    const byKind = {};
+    for (const r of timed) {
+      const k = r.action?.kind || "?";
+      byKind[k] = byKind[k] || { count: 0, ms: 0, retried: 0 };
+      byKind[k].count += 1;
+      byKind[k].ms += r.ms;
+      if (r.attempts > 1) byKind[k].retried += 1;
+    }
     const report = {
       at: new Date().toISOString(),
       dryRun: this.dryRun,
@@ -392,7 +404,17 @@ export class GkcRunner {
       failed: failed.map((r) => ({ action: safeLabel(r.action), detail: r.detail || null })),
       warnings: [...new Set(this.warnings)],
       devices: [...this.layout.named.entries()].map(([name, p]) => ({ name, ...p })),
-      results: this.results.map((r) => ({ ok: r.ok, skipped: !!r.skipped, action: safeLabel(r.action), detail: r.detail ?? null })),
+      results: this.results.map((r) => ({ ok: r.ok, skipped: !!r.skipped, action: safeLabel(r.action), detail: r.detail ?? null, ...(Number.isFinite(r.ms) ? { ms: r.ms, attempts: r.attempts } : {}) })),
+      ...(timed.length
+        ? {
+            timing: {
+              totalMs: timed.reduce((s, r) => s + r.ms, 0),
+              retried: timed.filter((r) => r.attempts > 1).length,
+              byKind: Object.fromEntries(Object.entries(byKind).map(([k, v]) => [k, { count: v.count, avgMs: Math.round(v.ms / v.count), retried: v.retried }])),
+              slowest: [...timed].sort((a, b) => b.ms - a.ms).slice(0, 5).map((r) => ({ action: safeLabel(r.action), ms: r.ms, attempts: r.attempts })),
+            },
+          }
+        : {}),
     };
     try {
       fs.mkdirSync(CONFIG.outputDir, { recursive: true });
@@ -400,8 +422,9 @@ export class GkcRunner {
     } catch {
       /* best effort */
     }
+    const took = report.timing ? ` in ${(report.timing.totalMs / 1000).toFixed(0)}s${report.timing.retried ? `, ${report.timing.retried} retried` : ""}` : "";
     log(
-      `=== ${this.dryRun ? "Dry-run" : "Run"} summary: ${okCount}/${this.results.length} ok${failed.length ? `, ${failed.length} failed` : ""}${skipped.length ? `, ${skipped.length} skipped` : ""}${report.warnings.length ? `, ${report.warnings.length} warning(s)` : ""} ===`,
+      `=== ${this.dryRun ? "Dry-run" : "Run"} summary: ${okCount}/${this.results.length} ok${failed.length ? `, ${failed.length} failed` : ""}${skipped.length ? `, ${skipped.length} skipped` : ""}${report.warnings.length ? `, ${report.warnings.length} warning(s)` : ""}${took} ===`,
     );
     for (const f of failed) log(`  ✗ ${f.detail || labelAction(f.action)}`);
     return report;

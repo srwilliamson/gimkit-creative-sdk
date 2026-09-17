@@ -9,9 +9,33 @@
  * it saw; `gkc probe` dumps the same information for a data fix.
  */
 import { cfgLog } from "./configure-log.mjs";
+import { reactFindClick } from "./editor-actions.mjs";
 import { pickDropdownOption } from "./device-editor.mjs";
 
 const CREATE_RE = /create\s*(new\s*)?block\s*code|add\s*(new\s*)?block\s*code|new\s*block\s*code|^\+?\s*block\s*code$|^create$|^add\s*blocks?$|^\+$/i;
+
+/** Click the device panel's "Blocks" tab. */
+export async function openBlocksTab(page) {
+  const hit =
+    (await reactFindClick(page, (t) => /^blocks$/i.test(t))) ||
+    (await page
+      .getByRole("tab", { name: /^blocks$/i })
+      .first()
+      .click({ force: true, timeout: 2000 })
+      .then(() => true)
+      .catch(() => false));
+  await page.waitForTimeout(600);
+  return hit;
+}
+
+/** Number of blocks in the current Blockly workspace (0 when there is none). */
+export async function countWorkspaceBlocks(page) {
+  return page.evaluate(() => {
+    const ws = window.Blockly?.getMainWorkspace?.();
+    if (!ws) return 0;
+    return ws.getAllBlocks?.(false)?.length || document.querySelectorAll(".blocklyDraggable").length;
+  });
+}
 
 /** True when a Blockly workspace with a visible SVG exists on the page. */
 export async function hasBlocklyWorkspace(page) {

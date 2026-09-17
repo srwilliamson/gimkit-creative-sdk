@@ -1,48 +1,19 @@
 /**
- * Launch Chrome for Gimkit — CDP attach with fallback, shared DLD profile.
+ * Launch Chrome for Gimkit — attach over CDP when GKC_CDP_PORT/URL is set,
+ * otherwise launch the installed Chrome with the SDK's persistent profile
+ * (browser-profile/ or GKC_PROFILE_DIR), which keeps the Gimkit login between runs.
  */
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
 import { chromium } from "playwright";
-import { CONFIG, KNOWN_PROFILE_DIRS, log } from "./config.mjs";
+import { CONFIG, log } from "./config.mjs";
 import { warmBrowserContext, ensureGimkitPage } from "./gkc-page.mjs";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.resolve(__dirname, "..", "..");
 
 const STEALTH_INIT = `
   Object.defineProperty(navigator, "webdriver", { get: () => undefined });
   window.chrome = window.chrome || { runtime: {} };
 `;
 
-export function resolveProfileDir() {
-  if (process.env.GKC_PROFILE_DIR) return process.env.GKC_PROFILE_DIR;
-
-  const hasSession = (dir) => {
-    try {
-      return (
-        fs.existsSync(path.join(dir, "Default", "Cookies")) ||
-        fs.existsSync(path.join(dir, "Default", "Network", "Cookies")) ||
-        fs.existsSync(path.join(dir, "Default", "Local Storage"))
-      );
-    } catch {
-      return false;
-    }
-  };
-
-  // First profile that already holds a session wins; else the SDK's own profile dir.
-  for (const dir of KNOWN_PROFILE_DIRS) {
-    if (hasSession(dir)) {
-      if (dir !== CONFIG.profileDir) log(`Using existing login profile: ${dir}`);
-      return dir;
-    }
-  }
-  return CONFIG.profileDir;
-}
-
 async function launchPersistent() {
-  const profileDir = resolveProfileDir();
+  const profileDir = CONFIG.profileDir;
   log(`Browser profile: ${profileDir}`);
 
   const context = await chromium.launchPersistentContext(profileDir, {
@@ -148,24 +119,10 @@ export async function isGoogleLoginBlocked(page) {
   );
 }
 
-export async function waitForGimkitLogin(page) {
+/** Explain the one login path that does not work in automated Chrome. */
+export async function noteLoginHints(page) {
   if (await isGoogleLoginBlocked(page)) {
-    log("");
-    log("Google blocked sign-in. Use 'Continue with email' on Gimkit.");
-    log("Or use launch-chrome-debug.ps1 + GKC_CDP_PORT=9222");
-    log("");
-  }
-  // In auto mode, fail fast with a clear message if we are still on a login page.
-  const auto = (process.env.GKC_AUTO || "").toLowerCase() === "1"
-    || (process.env.GKC_NO_PROMPT || "").toLowerCase() === "1"
-    || process.argv.slice(2).some((a) => ["--auto", "--no-prompt", "--unattended"].includes(a));
-  if (!auto) return;
-  try {
-    const url = page.url() || "";
-    if (/gimkit\.com\/(login|signin|auth)/i.test(url)) {
-      log("Auto mode: waiting for Gimkit login to complete (log in, then the bot continues)...");
-    }
-  } catch {
-    /* ignore probe errors */
+    log("Google blocked sign-in in this Chrome. Go back and use 'Continue with email' on Gimkit,");
+    log("or attach to your own Chrome instead: start it with --remote-debugging-port=9222 and set GKC_CDP_PORT=9222.");
   }
 }

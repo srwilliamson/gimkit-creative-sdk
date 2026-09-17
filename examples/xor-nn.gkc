@@ -3,7 +3,7 @@
 # Weights are stored ×100 because Gimkit properties only hold integers.
 #
 #   gkc plan examples/xor-nn.gkc        # print the click plan (offline)
-#   gkc run  examples/xor-nn.gkc --auto # build it live
+#   gkc run  examples/xor-nn.gkc        # build it live
 
 layout origin 72,72 gap 95,68
 

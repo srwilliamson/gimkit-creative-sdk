@@ -14,8 +14,7 @@ import { CONFIG, log } from "./editor/config.mjs";
 import { dismissDevicePanel } from "./editor/editor-actions.mjs";
 import { openDeviceAt, clickAllOptionsTab } from "./editor/device-editor.mjs";
 import { readPanelLabels } from "./editor/device-options.mjs";
-import { openBlocksTab } from "./editor/block-builder-tabs.mjs";
-import { ensureBlockWorkspace, dumpBlockRegistry, readSidebarTexts, hasBlocklyWorkspace } from "./editor/block-code.mjs";
+import { ensureBlockWorkspace, dumpBlockRegistry, readSidebarTexts, hasBlocklyWorkspace, openBlocksTab } from "./editor/block-code.mjs";
 
 /**
  * @param {import('playwright').Page} page

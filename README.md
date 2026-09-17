@@ -6,8 +6,9 @@ SDK does the whole dance: Escape → E → Devices → search "Trigger" → clic
 click map → Escape. Every verb is pre-programmed, verified by re-opening the
 device, and retried on failure.
 
-Built from the battle-tested primitives in `gimkit-creative-nn-builder`
-(the XOR neural-network bot) — this is the reusable version for any map.
+It grew out of a one-off bot that built an XOR neural network in a Creative
+map; this is the reusable version for any map (that network is now
+`examples/xor-nn.gkc`).
 
 ```
 gimkit-creative-sdk/
@@ -46,9 +47,9 @@ node src/cli.mjs check examples/xor-nn.gkc # static check: 0 errors, 0 warnings
 node src/cli.mjs simulate examples/xor-nn.gkc --set input1=1 --set input2=0 --fire nn-forward
 node src/cli.mjs plan examples/hello.gkc   # print the click plan, touch nothing
 
-# live (Chrome must be logged into Gimkit, or set GKC_EMAIL/GKC_PASSWORD)
-$env:GKC_HOST_URL = "https://www.gimkit.com/host?id=<your map id>"
-$env:GKC_AUTO = "1"
+# live: opens Chrome. If it lands on the login page or the dashboard, log in /
+# open your map in that window and the build starts by itself.
+$env:GKC_HOST_URL = "https://www.gimkit.com/host?id=<your map id>"   # optional
 node src/cli.mjs run examples/hello.gkc
 node src/cli.mjs probe --at r0c0           # dump what the editor really calls things
 ```
@@ -323,10 +324,11 @@ non-integer defaults, shared positions, duplicate names, malformed
 
 - Chrome with the map open in **HOST** or **edit** mode, either attached via
   `GKC_CDP_PORT=9222` (start Chrome with `--remote-debugging-port=9222`) or
-  launched from a saved profile (`GKC_PROFILE_DIR`; the SDK auto-detects the
-  NN-builder / debug-Chrome profiles).
-- Login: an existing session, or `GKC_EMAIL` + `GKC_PASSWORD` for unattended
-  email login (Google OAuth is blocked in automation).
+  launched by the SDK with its own persistent profile (`browser-profile/`, or
+  `GKC_PROFILE_DIR`). The profile keeps the Gimkit login between runs.
+- Login: log in once in that Chrome window (the run waits for you), or set
+  `GKC_EMAIL` + `GKC_PASSWORD` for unattended email login (Google OAuth is
+  blocked in automation).
 - Keep the editor at 0.3 zoom (`GKC_ZOOM`) and do not pan between `place` and
   configure lines — coordinates are screen-space.
 
@@ -338,7 +340,8 @@ non-integer defaults, shared positions, duplicate names, malformed
 | `GKC_CDP_PORT` / `GKC_CDP_URL` | attach to a running debug Chrome |
 | `GKC_PROFILE_DIR` | persistent Chrome profile to launch |
 | `GKC_EMAIL`, `GKC_PASSWORD` | unattended email login |
-| `GKC_AUTO=1` | never wait for ENTER |
+| `GKC_LOGIN_TIMEOUT_MS` | how long a run waits for a manual login (default 15 min) |
+| `GKC_EDITOR_TIMEOUT_MS` | how long it waits for build mode / a map to be opened (default 10 min) |
 | `GKC_HEADLESS=1` | headless launch (profile mode only) |
 | `GKC_ZOOM` | editor zoom the coordinates assume (default 0.3) |
 | `GKC_OUTPUT_DIR` | where `build.log`, `run-report.json`, screenshots go |

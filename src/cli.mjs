@@ -2,7 +2,7 @@
 /**
  * gkc — Gimkit Creative SDK command line.
  *
- *   gkc run <file.gkc | map.json> [--dry-run] [--host <url>] [--auto] [--stop-on-fail] [--strict] [--force]
+ *   gkc run <file.gkc | map.json> [--dry-run] [--host <url>] [--stop-on-fail] [--strict] [--force]
  *   gkc check <file>           # static validation only (exit 1 on errors)
  *   gkc do "place trigger \"T1\" at r0c0" ["trigger \"T1\" receives go" ...] [--dry-run]
  *   gkc plan <file>            # alias for run --dry-run
@@ -12,8 +12,8 @@
  *   gkc probe [--at r0c0|x,y|"Name"] [--on channel]   # dump Blockly registry + sidebar labels
  *   gkc devices                # list known device type names
  *
- * Env: GKC_HOST_URL, GKC_CDP_PORT=9222, GKC_EMAIL/GKC_PASSWORD (auto-login),
- *      GKC_AUTO=1, GKC_ZOOM=0.3, GKC_OUTPUT_DIR
+ * Env: GKC_HOST_URL, GKC_CDP_PORT=9222, GKC_EMAIL/GKC_PASSWORD (unattended login),
+ *      GKC_ZOOM=0.3, GKC_OUTPUT_DIR, GKC_LOGIN_TIMEOUT_MS, GKC_EDITOR_TIMEOUT_MS
  */
 import fs from "fs";
 import path from "path";
@@ -45,7 +45,6 @@ for (let i = 0; i < argv.length; i += 1) {
 }
 const flagValue = (name) => (flags.has(name) ? flags.get(name) : undefined);
 const dryRun = flags.has("--dry-run") || flags.has("--plan") || positional[0] === "plan";
-if (flags.has("--auto")) process.env.GKC_AUTO = "1";
 if (flagValue("--host")) process.env.GKC_HOST_URL = flagValue("--host");
 if (flags.has("--quiet")) setQuiet(true);
 const runnerOpts = {
@@ -57,7 +56,8 @@ const runnerOpts = {
 function usage() {
   console.log(`gkc — Gimkit Creative SDK
 
-  gkc run <file.gkc|map.json> [--dry-run] [--host <url>] [--auto] [--stop-on-fail] [--strict] [--force]
+  gkc run <file.gkc|map.json> [--dry-run] [--host <url>] [--stop-on-fail] [--strict] [--force]
+                                       live: opens Chrome; log in / open the map there if asked, then it builds
   gkc check <file.gkc|map.json>        static check only: syntax, positions, names, block lint
   gkc plan <file>                      dry-run: print the click plan, touch nothing
   gkc do "<command>" [...] [--dry-run] run one or more command lines

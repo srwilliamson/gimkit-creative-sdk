@@ -24,9 +24,7 @@ import {
   openDeviceAt,
   readPropertyPanel,
 } from "./editor/device-editor.mjs";
-import { openBlocksTab } from "./editor/block-builder-tabs.mjs";
-import { countWorkspaceBlocks } from "./editor/blockly-automation.mjs";
-import { ensureBlockWorkspace } from "./editor/block-code.mjs";
+import { ensureBlockWorkspace, openBlocksTab, countWorkspaceBlocks } from "./editor/block-code.mjs";
 import { setDeviceOption } from "./editor/device-options.mjs";
 import { GKC } from "./editor/gkc-knowledge.mjs";
 import { buildProgramInWorkspace, parseProgram, formatProgram, estimateBlockCount } from "./blocks.mjs";

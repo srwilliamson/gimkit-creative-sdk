@@ -1105,6 +1105,10 @@ function gkcBuild(program, opts) {
     while (cur && guard++ < 400) { if (cur === statements[0]) { attachedHat = true; break; } cur = cur.nextConnection && cur.nextConnection.targetBlock(); }
   }
   if (ws.render) ws.render();
+  // Same as the workspace's right-click "Clean Up Blocks" + centre: the hat and its chain
+  // end up in a tidy column, in view, instead of wherever the editor spawned the hat.
+  try { if (ws.cleanUp) ws.cleanUp(); } catch (e) {}
+  try { if (ws.scrollCenter) ws.scrollCenter(); } catch (e) {}
   const all = ws.getAllBlocks ? ws.getAllBlocks(false) : [];
   const expected = (program.statements || []).filter((s) => s.op !== "declare").length;
   return {

@@ -21,22 +21,6 @@ export const CONFIG = {
   mapScanStep: Number(process.env.GKC_SCAN_STEP) || 44,
 };
 
-/** Known Chrome profiles that may already hold a Gimkit login (checked in order). */
-export const KNOWN_PROFILE_DIRS = [
-  CONFIG.profileDir,
-  path.join(process.env.LOCALAPPDATA || "", "GimkitNNBuilder-Chrome"),
-  path.resolve(ROOT, "..", "gimkit-creative-nn-builder", "browser-profile"),
-  path.resolve(ROOT, "..", "gimkit-dld-agent", "browser-profile"),
-].filter(Boolean);
-
-/** Scale screen pixels for placement at current map zoom. */
-export function getMapZoomScale() {
-  const z = CONFIG.mapZoom;
-  if (z > 0 && z <= 1) return z;
-  if (z > 1) return 1 / z;
-  return 1;
-}
-
 let quiet = false;
 export function setQuiet(v) {
   quiet = !!v;
@@ -62,9 +46,4 @@ export async function getViewport(page) {
     /* fall through */
   }
   return page.viewportSize() || { width: 1500, height: 900 };
-}
-
-export function loadBlueprint(blueprintPath) {
-  const resolved = path.isAbsolute(blueprintPath) ? blueprintPath : path.join(ROOT, blueprintPath);
-  return JSON.parse(fs.readFileSync(resolved, "utf8"));
 }

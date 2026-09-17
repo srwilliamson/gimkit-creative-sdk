@@ -8,7 +8,6 @@ import {
   REACT_CLICK_FN,
 } from "./editor-actions.mjs";
 import { log, getViewport } from "./config.mjs";
-import { scaledDefault } from "./scaling.mjs";
 import { cfgLog, cfgLogPanel, cfgLogProbe, cfgLogSummary, probeConfigureUi, resetConfigureLog } from "./configure-log.mjs";
 
 const SIDEBAR_MIN_LEFT = 0.52;
@@ -1303,49 +1302,4 @@ async function setAndVerifyChannel(page, item, channel, kind) {
     }
   }
   return { ok: false, channel, reason: "channel-not-persisted" };
-}
-
-export async function tryConfigureDevice(page, item, blueprint, ctx = {}) {
-  const { type, name, label, channelOut, channelIn } = item;
-
-  if (type === "property" && name) {
-    const def = scaledDefault(blueprint, name);
-    const r = await configurePropertyDevice(page, item, def, ctx);
-    return r.ok;
-  }
-  if (type === "button" && channelOut) {
-    const r = await configureButtonChannel(page, item, channelOut);
-    if (r.ok) log(`  OK Button "${name}" -> "${channelOut}"`);
-    else log(`  FAIL Button "${name}" - ${r.reason || "failed"}`);
-    return r.ok;
-  }
-  if (type === "trigger" && channelIn) {
-    const r = await configureTriggerChannel(page, item, channelIn);
-    if (r.ok) log(`  OK Trigger "${name}" <- "${channelIn}"`);
-    else log(`  FAIL Trigger "${name}" - ${r.reason || "failed"}`);
-    return r.ok;
-  }
-  if (type === "text" && (label || name)) {
-    const r = await configureTextLabel(page, item, label || name);
-    if (r.ok) log(`  OK Text: ${(label || name).slice(0, 40)}`);
-    return r.ok;
-  }
-  return false;
-}
-
-export async function wireAllDevices(page, manifest, blueprint) {
-  log("");
-  log("=== Wiring channels ===");
-  let wired = 0;
-  for (const item of manifest.queue.filter((d) => d.type === "button" || d.type === "trigger")) {
-    if (await tryConfigureDevice(page, item, blueprint)) wired += 1;
-    await page.waitForTimeout(500);
-  }
-  log(`Wired ${wired}/${manifest.queue.filter((d) => d.type === "button" || d.type === "trigger").length}`);
-  return wired;
-}
-
-export async function buildEditingGuide(blueprint) {
-  const { writeConnectionsGuide } = await import("./connections.mjs");
-  return `# Gimkit Creative - editing\n\n${writeConnectionsGuide(blueprint).md}`;
 }

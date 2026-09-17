@@ -132,16 +132,6 @@ export function parseMapId(url) {
   }
 }
 
-export function classifyGkcUrl(url) {
-  if (!url || !/gimkit\.com/i.test(url)) return "external";
-  if (/\/edit\b/i.test(url)) return "edit";
-  if (/\/host\b/i.test(url)) return "host";
-  if (/\/creative\b/i.test(url)) return "dashboard";
-  if (/\/play\b/i.test(url)) return "play";
-  if (/\/join\b/i.test(url)) return "join";
-  return "gimkit-other";
-}
-
 /**
  * Detect build mode vs playtest vs dashboard.
  * Note: GKC collaborative sessions use /host?id= WITH a join code while still building.

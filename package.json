@@ -19,7 +19,7 @@
   "scripts": {
     "test": "node test/run-tests.mjs",
     "plan:xor": "node src/cli.mjs plan examples/xor-nn.gkc",
-    "run:xor": "node src/cli.mjs run examples/xor-nn.gkc --auto",
+    "run:xor": "node src/cli.mjs run examples/xor-nn.gkc",
     "plan:hello": "node src/cli.mjs plan examples/hello.gkc",
     "repl": "node src/cli.mjs repl",
     "repl:dry": "node src/cli.mjs repl --dry-run"

@@ -80,11 +80,35 @@ async function emailLogin(page, email, password) {
   log("Gimkit email login OK");
 }
 
+/** How long a run waits for a person to log in when no credentials are configured. */
+export function loginTimeoutMs() {
+  const n = Number(process.env.GKC_LOGIN_TIMEOUT_MS);
+  return Number.isFinite(n) && n > 0 ? n : 15 * 60 * 1000;
+}
+
+/** Poll until the page is authenticated (someone logged in by hand) or the timeout passes. */
+async function waitForManualLogin(page, timeoutMs) {
+  const deadline = Date.now() + timeoutMs;
+  let nextNote = 0;
+  while (Date.now() < deadline) {
+    if (page.isClosed?.()) throw new Error("The Gimkit window was closed before login finished.");
+    if (await isAuthenticated(page)) return true;
+    if (Date.now() >= nextNote) {
+      const left = Math.round((deadline - Date.now()) / 60000);
+      log(`Waiting for you to log in to Gimkit in the Chrome window (${left} min left; email login — Google sign-in is blocked in automated Chrome)…`);
+      nextNote = Date.now() + 60000;
+    }
+    await page.waitForTimeout(2000);
+  }
+  return false;
+}
+
 /**
  * Guarantee an authenticated Gimkit session in this persistent context.
  * - Already logged in → returns immediately.
  * - Logged out + creds present → logs in via email, returns to `returnTo` URL.
- * - Logged out + no creds → throws with exact setup instructions.
+ * - Logged out + no creds → waits for a manual login in the open window
+ *   (GKC_LOGIN_TIMEOUT_MS, default 15 min), then throws with setup instructions.
  */
 export async function ensureGimkitAuth(page, { returnTo = null } = {}) {
   if (await isAuthenticated(page)) return { ok: true, method: "existing-session" };
@@ -93,16 +117,28 @@ export async function ensureGimkitAuth(page, { returnTo = null } = {}) {
   // Modal may have redirected to login; re-check.
   if (await isAuthenticated(page)) return { ok: true, method: "existing-session" };
 
+  const backTo = returnTo || page.url();
   const { email, password } = creds();
   if (!email || !password) {
-    throw new Error(
-      "Gimkit session expired and no credentials available. " +
-        "Set GKC_EMAIL + GKC_PASSWORD env secrets (Cursor Dashboard → Cloud Agents → Secrets), " +
-        "or log in manually once in the debug Chrome profile.",
-    );
+    if (!/gimkit\.com\/login/i.test(page.url() || "")) {
+      await page.goto("https://www.gimkit.com/login?location=%2Fcreative", { waitUntil: "domcontentloaded", timeout: 90000 }).catch(() => {});
+    }
+    await page.bringToFront().catch(() => {});
+    const ok = await waitForManualLogin(page, loginTimeoutMs());
+    if (!ok) {
+      throw new Error(
+        "Not logged in to Gimkit. Log in once in the Chrome window the SDK opens (the profile remembers it), " +
+          "or set GKC_EMAIL + GKC_PASSWORD for unattended email login.",
+      );
+    }
+    log("Gimkit login detected — continuing.");
+    if (backTo && /gimkit\.com\/(host|edit)\b/i.test(backTo) && !/gimkit\.com\/(host|edit)\b/i.test(page.url() || "")) {
+      await page.goto(backTo, { waitUntil: "domcontentloaded", timeout: 90000 });
+      await page.waitForTimeout(4000);
+    }
+    return { ok: true, method: "manual-login" };
   }
 
-  const backTo = returnTo || page.url();
   await page.goto("https://www.gimkit.com/login?location=%2Fcreative", {
     waitUntil: "domcontentloaded",
     timeout: 90000,
